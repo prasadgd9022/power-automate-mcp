@@ -1,0 +1,7 @@
+# Local Power Automate MCP server - Python dependencies
+# Verified working with Python 3.10 - 3.14 on Windows.
+# Install with:  pip install -r requirements.txt
+
+mcp>=1.26.0
+azure-identity>=1.25.0
+requests>=2.32.0
