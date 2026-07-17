@@ -24,6 +24,7 @@ tenant's flow data through an external vendor's cloud.
 - [How it works](#how-it-works)
 - [Prerequisites](#prerequisites)
 - [Setup](#setup)
+- [Integrate with your MCP host](#integrate-with-your-mcp-host) — Copilot CLI, VS Code, Claude
 - [Verify it works](#verify-it-works)
 - [Tool reference](#tool-reference) — what each of the 11 tools is for
 - [Safety model](#safety-model)
@@ -91,8 +92,34 @@ minted from this same session.
 
 ### 4. Register the server with your MCP host
 
-Add a `power-automate` entry to your MCP host's config. For **GitHub Copilot CLI**
-that file is:
+Pick your host below and follow the matching steps in
+[Integrate with your MCP host](#integrate-with-your-mcp-host). In every case you
+point the host at the **absolute path** to `server.py` and run it over **stdio**.
+
+> There is also a `SETUP.md` written for an AI agent to perform this
+> registration for you automatically in the Copilot CLI.
+
+---
+
+## Integrate with your MCP host
+
+This server is a standard **stdio** MCP server, so any MCP-capable client can run
+it. The launch command is always the same:
+
+```
+python <ABSOLUTE_PATH_TO>/power-automate-mcp/server.py --transport stdio
+```
+
+Replace `<ABSOLUTE_PATH_TO>` with the folder where you cloned the repo, and use
+whichever interpreter is on your `PATH` (`python`, `py -3`, or `python3`). On
+**Windows, escape backslashes in JSON** — e.g.
+`"C:\\Users\\you\\power-automate-mcp\\server.py"`. In every client, if the config
+file already exists, **merge** the `power-automate` entry into the existing
+servers object rather than overwriting the file.
+
+### GitHub Copilot CLI
+
+Config file:
 
 - Windows: `%USERPROFILE%\.copilot\mcp-config.json`
 - macOS / Linux: `$HOME/.copilot/mcp-config.json`
@@ -110,18 +137,67 @@ that file is:
 }
 ```
 
-Replace `<ABSOLUTE_PATH_TO>` with the folder where you cloned the repo. On
-Windows, escape backslashes in JSON (e.g.
-`"C:\\Users\\you\\power-automate-mcp\\server.py"`). If the file already exists,
-**merge** this `power-automate` key into the existing `mcpServers` object rather
-than overwriting the file.
+Then **restart the Copilot CLI** so it picks up the new server. Verify with
+`/mcp` inside the CLI, which should list `power-automate` and its 11 tools.
 
-> There is also a `SETUP.md` written for an AI agent to perform this
-> registration for you automatically.
+### VS Code (Copilot Chat — Agent mode)
 
-### 5. Restart your MCP host
+VS Code discovers MCP servers from a workspace file at `.vscode/mcp.json`
+(or your user `settings.json` under `"mcp"`). Note the key is **`servers`**, not
+`mcpServers`:
 
-Restart the Copilot CLI so it picks up the new server.
+```jsonc
+// .vscode/mcp.json
+{
+  "servers": {
+    "power-automate": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["<ABSOLUTE_PATH_TO>/power-automate-mcp/server.py", "--transport", "stdio"]
+    }
+  }
+}
+```
+
+Save the file, then click **Start** on the server shown above the block (or run
+**MCP: List Servers** from the Command Palette). Open **Copilot Chat**, switch to
+**Agent** mode, and the 11 tools appear in the tools picker. Requires a recent
+VS Code with MCP support enabled.
+
+### Claude Desktop
+
+Edit Claude Desktop's config (**Settings → Developer → Edit Config**, or open it
+directly):
+
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```jsonc
+{
+  "mcpServers": {
+    "power-automate": {
+      "command": "python",
+      "args": ["<ABSOLUTE_PATH_TO>/power-automate-mcp/server.py", "--transport", "stdio"]
+    }
+  }
+}
+```
+
+**Fully quit and reopen** Claude Desktop (not just close the window). The server
+appears under the tools/plugin (🔌) icon in the chat box. If it fails to load,
+use an absolute interpreter path (e.g. `C:\\Python312\\python.exe` or the output
+of `which python3`) as `command`.
+
+### Claude Code (CLI)
+
+Register it with one command (run from anywhere):
+
+```bash
+claude mcp add power-automate -- python <ABSOLUTE_PATH_TO>/power-automate-mcp/server.py --transport stdio
+```
+
+Check it registered with `claude mcp list`, then use `/mcp` inside a `claude`
+session to confirm the tools are available.
 
 ---
 
